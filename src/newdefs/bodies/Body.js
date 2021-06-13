@@ -1,8 +1,27 @@
-import { current } from "immer";
+import produce, { current } from "immer";
+import { flow } from "lodash";
 import { Effect } from "./Effect";
 import { shouldApplyAffect } from "./utils";
+import { attr, placement } from "./primatives";
+import { Attr } from "./Attr";
 
 export class Body {
+    static add( body, attribute, value ) {
+    	const target =  Attr.get( body, attribute );
+    	const res = Effect.add( target, value );
+    }
+    static getPosition( body, modifier = 'default' ) {
+    	const pos = body.attributes[ attr.POSITION ].value;
+
+        const mod = {
+            [ placement.AHEAD ]:  pos + 1,
+            [ placement.BEHIND ]: pos - 1,
+            default:              pos
+        };
+
+        return mod[ modifier ];
+    }
+
     static getBodyEffectById( body, id ) {
         return body.standardAffects[ id ] || body.temporaryAffects[ id ];
     }
@@ -26,9 +45,18 @@ export class Body {
 
     static applyEffect( affect, targetDef, world ) {
         const applicableBody = Effect.getEffectTargetBody( affect, targetDef );
-        if ( shouldApplyAffect( affect, applicableBody, world ) )
-            Body.applyAffectToBody( applicableBody, affect );
+        [].concat( applicableBody ).forEach( b => {
+            if ( shouldApplyAffect( affect, b, world ) )
+                Body.applyAffectToBody( b, affect );
+
+        });
+
         Effect.tickDown( affect );
+    }
+
+    static getEventAffects( body, eventType ) {
+        const affectIds = body.events[ eventType ].actions;
+        return affectIds.map( ( id ) => body.standardAffects[ id ] || body.temporaryAffects[ id ]);
     }
 
     static emit( body, eventType ) {

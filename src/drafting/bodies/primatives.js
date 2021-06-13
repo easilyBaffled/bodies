@@ -93,14 +93,25 @@
  * @typedef {string} PathString
  */
 
+export const MAXLENGTH = 10;
+
 export const attr = {
-    ALIVE:    "ALIVE",
-    BODIES:   "BODIES",
-    HANDLING: "handling",
-    LEVEL:    "LEVEL",
-    POSITION: "position",
-    POWER:    "power",
-    SPEED:    "speed"
+    ACCEL:     "acceleration",
+    ALIVE:     "ALIVE",
+    ANGLE:     'ANGLE',
+    BODIES:    "BODIES",
+    CARDS:     'CARDS',
+    HANDLING:  "handling",
+    IS_A_BOT:  "isABot",
+    KART:      "KART",
+    LAPS:      "LAPS",
+    LENGTH:    'LENGTH',
+    LEVEL:     "LEVEL",
+    MAX_SPEED: "MAX_SPEED",
+    PATHSTR:   'PATHSTR',
+    POSITION:  "position",
+    POWER:     "power",
+    SPEED:     "speed"
 };
 
 export const events = {
@@ -111,6 +122,12 @@ export const events = {
 };
 export const time = {
     TICK: 1
+};
+
+export const affect = {
+    ACCEL: "accelerate",
+    MOVE:  "move",
+    NORM:  "normalize-speed"
 };
 
 export const affectTargets = {
@@ -127,9 +144,8 @@ export const placement = {
     BEHIND: 'BEHIND'
 };
 
-export const attribute = ({ type, id, value, maxValue }) => ({
+export const attribute = ({ type, id, value }) => ({
     id: id ?? type,
-    maxValue,
     type,
     value
 });
@@ -153,3 +169,27 @@ attribute.handling = ({ value, maxValue }) =>
         type: attr.HANDLING,
         value
     });
+
+export const opp = {
+    eq:          "===",
+    greaterThan: ">",
+    lessThan:    "<"
+};
+
+export const condition = ( left, right, type ) => ({
+    condition: {
+        opperator:   type,
+        rightTarget: {
+            type:      "target",
+            ...right
+        },
+        target: {
+            type:      "target",
+            ...left
+        },
+        type: "BinaryCondition"
+    }
+});
+
+condition.greaterThan = ( ...args ) => condition( ...args, opp.greaterThan );
+condition.lessThan = ( ...args ) => condition( ...args, opp.lessThan );

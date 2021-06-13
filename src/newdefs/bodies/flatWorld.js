@@ -1,11 +1,117 @@
-import produce from "immer";
-import { toDictById, withTypesForIds } from "../utils";
+import { flow } from 'lodash';
+import produce, { current } from "immer";
+import { isId, not, isDead } from "../utils";
 import { attr, affectTargets, events } from "./primatives";
+import { Effect } from "./Effect";
+import { Attr } from "./Attr";
+import { Body } from "./Body";
+
+const toDict =
+	( propType ) =>
+	    ( ...arr ) =>
+	        arr.flat().reduce( ( acc, o ) => Object.assign( acc, { [ o[ propType ] ]: o }), {});
+
+const toDictById = toDict( "id" );
+
+const withTypesForIds = ( ...objs ) => objs.map( typeToId );
+
+const typeToId = ( obj ) =>
+    obj.id ? obj : Object.assign({}, obj, { id: obj.type });
 
 const getEffectTarget = ( affect, targets ) =>
     targets[ affect?.targetBody ?? affectTargets.SELF ];
 
 export class FlatWorld {
+    static tick( world ) {
+        return produce( world, immerWorld => {
+            // Apply temporary Effects
+            Object.values( immerWorld.temporaryAffects ).forEach( ( affect ) => {
+                Body.applyEffect(
+                    affect,
+                    {
+                        [ affectTargets.SELF ]: immerWorld
+                    },
+                    immerWorld
+                );
+
+                if ( affect.dead ) delete immerWorld.temporaryAffects[ affect.id ];
+            });
+
+            // Apply Effects
+            Body.getEventAffects( immerWorld, events.TICK ).forEach( ( affect ) => {
+                Body.applyEffect(
+                    affect,
+                    {
+                        ...Attr.get( immerWorld, attr.BODIES ).reduce(
+                            ( acc, b ) => Object.assign( acc, { [ b.id ]: b }),
+                            {}
+                        ),
+                        [ affectTargets.ALL ]:  Attr.get( immerWorld, attr.BODIES ),
+                        [ affectTargets.SELF ]: immerWorld
+                    },
+                    immerWorld
+                );
+            });
+
+            // Updates Bodies
+            FlatWorld.getBodies( immerWorld ).forEach( body => {
+                const collidingBodies = FlatWorld.getBodiesAtPostion(
+                    immerWorld,
+                    Body.getPosition( body )
+                ).filter( not( isId( body.id ) ) );
+
+                collidingBodies.forEach( ( cB ) => {
+                    Body.getEventAffects( cB, events.COLLISION ).forEach( ( affect ) => {
+                        Body.applyEffect(
+                            affect,
+                            {
+                                [ affectTargets.SELF ]:     cB,
+                                [ affectTargets.COLLIDER ]: body
+                            },
+                            immerWorld
+                        );
+                    });
+                    FlatWorld.removeDeadBody( immerWorld, cB );
+                });
+
+                Object.values( body.temporaryAffects ).forEach( ( affect ) => {
+                    Body.applyEffect(
+                        affect,
+                        {
+                            [ affectTargets.SELF ]: body
+                        },
+                        immerWorld
+                    );
+
+                    if ( affect.dead ) delete body.temporaryAffects[ affect.id ];
+                });
+
+                Body.getEventAffects( body, events.TICK ).forEach( ( affect ) => {
+                    Body.applyEffect(
+                        affect,
+                        {
+                            [ affectTargets.SELF ]: body
+                        },
+                        immerWorld
+                    );
+                });
+
+                FlatWorld.removeDeadBody( immerWorld, body );
+            });
+        });
+
+    }
+
+    static removeDeadBody( world, body ) {
+        if ( isDead( body ) ) delete world.attributes[ attr.BODIES ].value[ body.id ];
+    }
+
+    static getBodiesAtPostion( world, position ) {
+        return FlatWorld.getBodies( world ).filter( ( body ) =>
+            FlatWorld.isSamePosition( Body.getPosition( body ), position )
+        );
+    }
+
     static create( segmentTemplate, rest ) {
         return {
             ...rest,
@@ -15,22 +121,36 @@ export class FlatWorld {
     }
     static addBody( world, body ) {
         return produce( world, ( w ) => {
-            w.attributes[ attr.BODIES ].value[ body.id ] = body;
+            flow(
+                ( _ ) => Attr.get( _, attr.BODIES ),
+                _ => Effect.add( _, body )
+            )( w );
         });
     }
 
     static addBodies( world, ...bodies ) {
         return produce( world, ( w ) => {
             bodies.forEach(
-                ( body ) => ( w.attributes[ attr.BODIES ].value[ body.id ] = body )
+                ( body ) => {
+                    flow(
+                        ( _ ) => Attr.get( _, attr.BODIES ),
+                        _ => Effect.add( _, body )
+                    )( w );
+                }
             );
         });
     }
     static getBody( world, id ) {
-        return world.attributes[ attr.BODIES ].value[ id ];
+        return Attr.get( world, attr.BODIES, id );
     }
+
+    static getBodies( world ) {
+        return Object.values( Attr.get( world, attr.BODIES ) );
+    }
+
     static getSegment( world, index ) {
-        return world.attributes[ attr.LEVEL ].value[ index ];
+        return Attr.get( world, attr.LEVEL, index );
+        // return world.attributes[ attr.LEVEL ].value[ index ];
     }
     static isSamePosition( a, b ) {
         return a === b;
@@ -39,6 +159,7 @@ export class FlatWorld {
         const { type, payload } = event;
         const actors = {
             use_item: ( w, { itemId, sourceId }) => {
+
                 const sourceBody = w.attributes[ attr.BODIES ].value[ sourceId ];
                 const item = sourceBody.holding[ itemId ];
 
@@ -48,14 +169,20 @@ export class FlatWorld {
                     const effectTarget = getEffectTarget( effect, {
                         [ affectTargets.SELF ]:   item,
                         [ affectTargets.HOLDER ]: sourceBody,
-                        [ affectTargets.WORLD ]:  world
+                        [ affectTargets.WORLD ]:  w
                     });
+
+                    if ( effect.type === events.SPAWN )
+                        item.attributes[ attr.POSITION ].value = Body.getPosition( sourceBody, effect.placement );
+
 
                     effectTarget.temporaryAffects[ effect.id ] = {
                         duration:   1,
                         ...effect,
-                        targetBody: affectTargets.SELF
+                        targetBody: affectTargets.SELF,
+                        value:      effect.value === affectTargets.SELF ? item : effect.value
                     };
+
                 });
 
                 delete sourceBody.holding[ itemId ];
@@ -88,7 +215,7 @@ export const flatWorld = {
     events: toDictById(
         withTypesForIds(
             {
-                actions: [ 3 ],
+                actions: [],
                 type:    events.TICK
             },
             {

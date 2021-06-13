@@ -91,9 +91,11 @@ const getLuigi = ( world ) => FlatWorld.getBody( world, "luigi" );
 
 describe( "move a body", () => {
     let world;
+
     beforeEach( () => {
         world = FlatWorld.addBody( flatWorld, kart );
     });
+
     it( "should move", () => {
         const expected = produce( kart, ( k ) => {
             k.attributes[ attr.SPEED ].value += 1;
@@ -217,33 +219,34 @@ describe( "move a body", () => {
 
         expect( actual ).to.eqls( expected );
     });
-    // it.only("should use a shell item and add a new shell to the world", () => {
-    //   const luigi = produce(kart, (k) => {
-    //     k.holding[greenShell.id] = greenShell;
-    //   });
+    it( "should use a shell item and add a new shell to the world", () => {
+        const luigi = produce( kart, ( k ) => {
+            k.holding[ greenShell.id ] = greenShell;
+        });
 
-    //   const world = FlatWorld.create(createSegment, {
-    //     bodies: {
-    //       luigi
-    //     }
-    //   });
+        world = FlatWorld.addBody( flatWorld, luigi );
 
-    //   const newWorld = FlatWorld.dispatch(world, {
-    //     type: "use_item",
-    //     payload: { itemId: greenShell.id, sourceId: luigi.id }
-    //   });
+        const newWorld = FlatWorld.dispatch( world, {
+            payload: {
+            	itemId:   greenShell.id,
+                sourceId: luigi.id
+            },
+            type:    "use_item"
+        });
 
-    //   const expected = FlatWorld.create(createSegment, {
-    //     bodies: {
-    //       luigi,
-    //       greenShell
-    //     }
-    //   });
+        const expected = FlatWorld.addBodies(
+            flatWorld,
+            produce( kart, ( k ) => {
+                k.attributes[ attr.SPEED ].value += 1;
+                k.attributes[ attr.POSITION ].value += 1;
+            }),
+            produce( greenShell, ( k ) => {
+                k.attributes[ attr.POSITION ].value += 2;
+            })
+        );
 
-    //   const actual = tickWorld(newWorld);
+        const actual = FlatWorld.tick( newWorld );
 
-    //   // const actual = tick(newWorld, "luigi").getBody('luigi');
-
-    //   expect(actual).to.eqls(expected);
-    // });
+        expect( actual ).to.eqls( expected );
+    });
 });

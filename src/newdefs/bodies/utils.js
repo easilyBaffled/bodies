@@ -3,9 +3,10 @@ import _ from "lodash";
 import { byType } from "../utils";
 import { FlatWorld } from "./flatWorld";
 import { attr } from "./primatives";
-export const findAttributeByNodeType = ( body, attributeType ) =>
-    _.find( body.attributes, byType( attributeType ) );
-
+export const findAttributeByNodeType = ( body, attributeType ) => {
+    const v = _.find( body.attributes, byType( attributeType ) );
+    return v;
+};
 export const comparisonOpperators = {
     "<":   ( a, b ) => a < b,
     "<=":  ( a, b ) => a <= b,
@@ -15,7 +16,6 @@ export const comparisonOpperators = {
 };
 
 export const rightTargetGetters = {
-    // collision: ({ body, collider }) => "",
     segment: ({ world, body }) => {
         const bodyPosition = findAttributeByNodeType( body, attr.POSITION ).value;
         return FlatWorld.getSegment( world, bodyPosition );

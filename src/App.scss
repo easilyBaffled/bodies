@@ -1,5 +1,56 @@
+$shape-size: 100px;
+$distance: 3px;
+$blur: 5px;
+$intensity: 50%;
+$bg-color: #e0e0e0;
+$inset-bg-color: rgba(255, 255, 255, 0.5);
+$font-color: #4b4b4b;
+
+body {
+  background: $bg-color;
+}
+
+/**
+ * $distance (pixels) - The shadow distance
+ * $blur (pixels) - The shadow blur
+ * $intensity (percentage) - The shadow color intansity
+ * $inset (boolean) - Whether the shadow is inner or outer
+ */
+@mixin neumorphism($distance, $blur, $intensity, $inset: false) {
+  box-shadow: $distance $distance $blur mix(#5a5a5a, transparent, $intensity) if($inset, inset, null),
+  -#{$distance} -#{$distance} $blur mix(#ffffff, transparent, $intensity) if($inset, inset, null);
+}
+
+%inner-container {
+   border-radius: .5em;
+   background: $inset-bg-color;
+   @include neumorphism($distance, $blur, $intensity, true);
+  //padding: .5em;
+  //border-radius: .5em;
+  //border: 1px solid black;
+}
+
+%morph {
+   background: $bg-color;
+   @include neumorphism($distance, $blur, $intensity);
+  border-radius: .5em;
+  // border: 1px solid black;
+}
 .App {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  * {
+	text-align: center;
+	display: flex;
+	margin: 0;
+	padding: 0;
+
+	box-sizing: border-box;
+  }
 }
 
 .App-logo {
@@ -39,4 +90,88 @@
 
 button {
   font-size: calc(10px + 2vmin);
+}
+
+.card-list {
+  flex-direction: row;
+  justify-content: center;
+  gap: 1rem;
+  width: 80vw;
+  overflow: scroll;
+  padding: 1rem;
+  //background: teal
+  @extend %inner-container;
+}
+
+.card {
+  background: #fff;
+  border-radius: 1rem;
+  height: 30vh;
+  min-width: 20vh;
+  width: 20vh;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 1rem;
+  padding: .5rem;
+
+  &.place-holder {
+	border: 2px dashed darkgray;
+  }
+
+  &.shadow-1 {
+	box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+	//transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+	transition: all 0.3s cubic-bezier(0.25, 0.8, 0.59, 1.29);
+
+	&:hover {
+	  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+	  transform: scale(1.05) translateY(-.3rem);
+	}
+  }
+}
+
+.stats {
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  flex-grow: 1;
+  width: 100%;
+  background: $bg-color;
+  border-bottom-right-radius: 1rem;
+  border-bottom-left-radius: 1rem;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 2px rgb(0 0 0 / 24%);
+}
+
+.path-container {
+
+  flex-grow: 1;
+  width: 100%;
+  background: $bg-color;
+  border-bottom-right-radius: 1rem;
+  border-bottom-left-radius: 1rem;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 2px rgb(0 0 0 / 24%);
+}
+.path {
+  transform: rotate( 270deg );
+  fill: transparent;
+  stroke: teal;
+  stroke-width: 1;
+}
+
+.race-track-container {
+  background: #130a06;
+  width: 100%;
+  height: 80vh;
+
+  .race-track-path {
+	fill: transparent;
+	stroke: snow;
+  }
+}
+
+.header {
+  align-items: center;
+  gap: 1rem;
 }

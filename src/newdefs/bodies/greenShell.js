@@ -1,5 +1,5 @@
 import { toDictById, withTypesForIds } from "../utils";
-import { attr, attribute, affectTargets, events } from "./primatives";
+import { attr, attribute, affectTargets, events, placement } from "./primatives";
 
 export const greenShell = {
     attributes: {
@@ -27,7 +27,7 @@ export const greenShell = {
                 type:    events.COLLISION
             },
             {
-                actions: [ "create" ],
+                actions: [ events.SPAWN  ],
                 type:    events.USE
             }
         )
@@ -55,6 +55,15 @@ export const greenShell = {
             targetAttribute: attr.ALIVE,
             type:            "selfDestruct",
             value:           false
+        },
+        [ events.SPAWN ]: {
+            func:            "add",
+            id:              events.SPAWN,
+            placement:       placement.AHEAD,
+            targetAttribute: attr.BODIES,
+            targetBody:      affectTargets.WORLD,
+            type:            events.SPAWN,
+            value:           affectTargets.SELF
         },
         stun: {
             func:            "set",

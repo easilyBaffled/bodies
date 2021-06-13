@@ -1,20 +1,21 @@
 import kindof from "kind-of";
 import _ from "lodash";
-import { findAttributeByNodeType } from "./bodies/utils";
-import { attr } from "./bodies/primatives";
+// import { findAttributeByNodeType } from "./bodies/utils";
+// import { attr } from "./bodies/primatives";
 export const isId = ( id ) => ( body ) => body.id === id;
 
 export const not =
-  ( fn ) =>
-      ( ...args ) =>
-          !fn( ...args );
+	( fn ) =>
+	    ( ...args ) =>
+	        !fn( ...args );
 
 export const toDict =
-  ( propType ) =>
-      ( ...arr ) =>
-          arr.flat().reduce( ( acc, o ) => Object.assign( acc, { [ o[ propType ] ]: o }), {});
+	( propType ) =>
+	    ( ...arr ) =>
+	        arr.flat().reduce( ( acc, o ) => Object.assign( acc, { [ o[ propType ] ]: o }), {});
 
 export const toDictById = toDict( "id" );
+export const toDictByName = toDict( "name" );
 
 export const typeToId = ( obj ) =>
     obj.id ? obj : Object.assign({}, obj, { id: obj.type });
@@ -32,5 +33,5 @@ export const byType = ( attributeType ) =>
 export const applyMaxBound = ( attr, value ) =>
     Number.isFinite( attr.maxValue ) ? Math.min( attr.maxValue, value ) : value;
 
-export const isDead = ( body ) =>
-    !( findAttributeByNodeType( body, attr.ALIVE )?.value ?? true );
+// export const isDead = ( body ) =>
+//     !( findAttributeByNodeType( body, attr.ALIVE )?.value ?? true );

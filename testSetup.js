@@ -1,7 +1,12 @@
 // import each from 'mocha-each'
+import { JSDOM } from 'jsdom';
 import { expect } from "chai";
 import { current } from "immer";
 
+const { window } = new JSDOM( '<!DOCTYPE html><html><head></head><body></body></html>' );
+global.document = window.document;
+global.window = window;
+global.navigator = { userAgent: 'node.js' };
 global.expect = expect;
 
 global.current = ( o ) => {
